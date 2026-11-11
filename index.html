@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes Élèves</title>
+
+<style>
+body{
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  margin:0;
+  background:#f2f2f7;
+}
+
+header{
+  background:#007aff;
+  color:white;
+  text-align:center;
+  padding:15px;
+  font-size:24px;
+  font-weight:bold;
+}
+
+.top{
+  display:flex;
+  gap:8px;
+  padding:10px;
+}
+
+.btn{
+  flex:1;
+  border:none;
+  border-radius:12px;
+  padding:12px;
+  background:#007aff;
+  color:white;
+  font-size:16px;
+}
+
+.student{
+  background:white;
+  margin:8px 10px;
+  padding:16px;
+  border-radius:12px;
+  font-size:20px;
+  box-shadow:0 1px 3px rgba(0,0,0,.15);
+}
+
+.hidden{
+  display:none;
+}
+
+textarea{
+  width:100%;
+  box-sizing:border-box;
+  border-radius:12px;
+  border:1px solid #ccc;
+  padding:12px;
+  font-size:16px;
+}
+
+.note{
+  background:white;
+  margin-top:8px;
+  padding:12px;
+  border-radius:12px;
+}
+
+.smallbtn{
+  border:none;
+  border-radius:8px;
+  padding:8px;
+  margin:2px;
+}
+</style>
+</head>
+
+<body>
+
+<header>Notes Élèves</header>
+
+<div id="home">
+
+<div class="top">
+<button class="btn" onclick="document.getElementById('importFile').click()">
+⬆️ Importer
+</button>
+
+<button class="btn" onclick="exportData()">
+⬇️ Exporter
+</button>
+
+<input type="file"
+       id="importFile"
+       style="display:none"
+       onchange="importData()">
+</div>
+
+<div id="students"></div>
+
+</div>
+
+<div id="detail" class="hidden">
+
+<div class="top">
+<button class="btn" onclick="backHome()">
+← Retour
+</button>
+</div>
+
+<div style="padding:10px">
+
+<h2 id="studentName"></h2>
+
+<div>
+<button class="smallbtn" onclick="quickNote('Absent')">🚫 Absent</button>
+<button class="smallbtn" onclick="quickNote('Retard')">⏰ Retard</button>
+<button class="smallbtn" onclick="quickNote('Lecture non faite')">📚 Lecture</button>
+<button class="smallbtn" onclick="quickNote('Devoir non fait')">📝 Devoir</button>
+</div>
+
+<textarea id="noteText"
+          rows="4"
+          placeholder="Touchez ici puis utilisez le micro du clavier Apple">
+</textarea>
+
+<br><br>
+
+<button class="btn" onclick="addNote()">
+Enregistrer la note
+</button>
+
+<div id="notes"></div>
+
+</div>
+
+</div>
+
+<script>
+
+const students = [
+"Ema",
+"Selihom",
+"Doneyt",
+"Thomas",
+"Eglantine",
+"Ryan",
+"Rapha",
+"Alessia",
+"Marley",
+"Miray",
+"Melanie",
+"Cynthia",
+"Dinis",
+"Bernardo",
+"Mason",
+"Ledion",
+"Emirkhan",
+"Yara",
+"Alissa",
+"Amira",
+"Usemua"
+];
+
+let currentStudent = "";
+
+function loadData() {
+  try{
+    return JSON.parse(
+      localStorage.getItem("notesEleves") || "{}"
+    );
+  }
+  catch{
+    return {};
+  }
+}
+
+function saveData(data){
+  localStorage.setItem(
+    "notesEleves",
+    JSON.stringify(data)
+  );
+}
+
+function init(){
+
+  const div =
+    document.getElementById("students");
+
+  students.forEach(student=>{
+
+    const card =
+      document.createElement("div");
+
+    card.className="student";
+    card.textContent=student;
+
+    card.onclick=()=>{
+      openStudent(student);
+    };
+
+    div.appendChild(card);
+
+  });
+
+}
+
+function openStudent(student){
+
+  currentStudent = student;
+
+  document
+  .getElementById("studentName")
+  .textContent = student;
+
+  document
+  .getElementById("home")
+  .classList.add("hidden");
+
+  document
+  .getElementById("detail")
+  .classList.remove("hidden");
+
+  displayNotes();
+
+}
+
+function backHome(){
+
+  document
+  .getElementById("detail")
+  .classList.add("hidden");
+
+  document
+  .getElementById("home")
+  .classList.remove("hidden");
+
+}
+
+function quickNote(text){
+
+  document
+  .getElementById("noteText")
+  .value = text;
+
+  addNote();
+
+}
+
+function addNote(){
+
+  const text =
+    document
+    .getElementById("noteText")
+    .value
+    .trim();
+
+  if(!text) return;
+
+  const data = loadData();
+
+  if(!data[currentStudent]){
+    data[currentStudent]=[];
+  }
+
+  data[currentStudent].push({
+    date:new Date().toISOString(),
+    text:text
+  });
+
+  saveData(data);
+
+  document
+    .getElementById("noteText")
+    .value="";
+
+  displayNotes();
+
+}
+
+function displayNotes(){
+
+  const data = loadData();
+
+  const notes =
+    data[currentStudent] || [];
+
+  notes.sort(
+    (a,b)=>
+      new Date(b.date)-new Date(a.date)
+  );
+
+  const container =
+    document.getElementById("notes");
+
+  container.innerHTML="";
+
+  notes.forEach(note=>{
+
+    const div =
+      document.createElement("div");
+
+    div.className="note";
+
+    div.innerHTML=
+    "<b>" +
+    new Date(note.date)
+      .toLocaleString("fr-CH") +
+    "</b><br>" +
+    note.text;
+
+    container.appendChild(div);
+
+  });
+
+}
+
+function exportData(){
+
+  const blob =
+    new Blob(
+      [
+        JSON.stringify(
+          loadData(),
+          null,
+          2
+        )
+      ],
+      {
+        type:"application/json"
+      }
+    );
+
+  const a =
+    document.createElement("a");
+
+  a.href=
+    URL.createObjectURL(blob);
+
+  a.download=
+    "SuiviEleves.json";
+
+  a.click();
+
+}
+
+function importData(){
+
+  const file =
+    document
+    .getElementById("importFile")
+    .files[0];
+
+  if(!file) return;
+
+  const reader =
+    new FileReader();
+
+  reader.onload=(e)=>{
+
+    localStorage.setItem(
+      "notesEleves",
+      e.target.result
+    );
+
+    alert("Import terminé");
+
+  };
+
+  reader.readAsText(file);
+
+}
+
+init();
+
+</script>
+
+</body>
+</html>
